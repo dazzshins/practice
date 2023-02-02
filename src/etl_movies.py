@@ -1,3 +1,4 @@
+# importing packages
 import findspark
 import os
 
@@ -9,11 +10,13 @@ from pyspark.sql.window import Window
 from pyspark.sql.types import StructField, StructType, StringType, LongType, IntegerType, TimestampType, DoubleType
 from pyspark.sql.functions import col, row_number, concat_ws, collect_list
 
+# initialising spark
 spark = SparkSession.builder.appName('movie_prac').getOrCreate()
 
 current_dir = os.getcwd()
 print(current_dir)
 
+# to create movie dataframe from read and initialise its schema 
 custom_schema_mov = StructType([
     StructField("MovieID", IntegerType(), True),
     StructField("Title", StringType(), True),
@@ -31,6 +34,7 @@ movies_df = spark.read.format("csv") \
 movies_df.printSchema()
 movies_df.show(5)
 
+# to create users dataframe from read and initialise its schema 
 custom_schema_users = StructType([
     StructField("UserID", IntegerType(), True),
     StructField("Gender", StringType(), True),
@@ -50,6 +54,7 @@ users_df = spark.read.format("csv") \
 users_df.printSchema()
 users_df.show(5)
 
+# to create ratings dataframe from read and initialise its schema 
 custom_schema_ratings = StructType([
     StructField("UserID", IntegerType(), True),
     StructField("MovieID", IntegerType(), True),
@@ -68,6 +73,7 @@ ratings_df = spark.read.format("csv") \
 ratings_df.printSchema()
 ratings_df.show(5)
 
+# to find the min, max and average rating of movies
 n_df = movies_df.join(ratings_df, 
                       on="movieId", 
                       how='inner')
@@ -80,6 +86,7 @@ res1_df = spark.sql('SELECT MovieID, Title, Genres,'
                     +' group by MovieID, Title, Genres')
 res1_df.show()
 
+# to find the top 3 movies of each userId
 w1 = Window.partitionBy("UserID") \
            .orderBy(col("Rating").desc())
 

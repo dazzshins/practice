@@ -1,3 +1,4 @@
+# to read output file generated for min, max and avg ratings of movie
 import findspark
 import os
 
