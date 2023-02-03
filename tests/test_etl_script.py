@@ -1,23 +1,27 @@
-# Pytests to test etl_script functions. 
-# Run using: pytest tests/test_etl_script.py 
+"""
+Pytests to test etl_script functions. 
+Run using: pytest tests/test_etl_script.py 
+"""
 
-import src
-from src import SampleApp
-import pytest
-import findspark
 import os
 import logging
-from typing import Optional
 
-findspark.init()
-
+import pytest
+import findspark
 import pyspark
 from pyspark.sql import SparkSession
 
+import src
+from src import MAnalyseApp
+
+
+findspark.init()
 spark = SparkSession.builder.appName('movie_prac').getOrCreate()
+ob = MAnalyseApp()
 
 def test_remove_duplicates_df():
-    '''Pytest to check if duplicates are removed from dataframe.'''
+    """Pytest to check if duplicates are removed from dataframe."""
+
     data = [
         ("1", "Titanic", "Action"),
         ("1", "Titanic", "Action"),
@@ -31,11 +35,12 @@ def test_remove_duplicates_df():
     ]
     expected_df = spark.createDataFrame(data_exp, ["MovieID", "Title", "Genres"])
 
-    res_df = SampleApp.remove_duplicates_df(df)
+    res_df = ob.remove_duplicates_df(df)
     assert res_df.collect() == expected_df.collect()
 
 def test_agg_rating():
-    '''Pytest to check if aggregation on ratings are performed correctly.'''
+    """Pytest to check if aggregation on ratings are performed correctly."""
+    
     data = [
         (1, 'Copper Chimney', 'Horror', 5),
         (1, 'Copper Chimney', 'Horror', 5),
@@ -46,7 +51,7 @@ def test_agg_rating():
     ]
     df = spark.createDataFrame(data, ['MovieID', 'Title', 'Genres', 'Rating'])
     df.createOrReplaceTempView('df')
-    res_df = SampleApp.get_agg_rating(table_df='df')
+    res_df = ob.get_agg_rating(table_df='df')
 
     data_exp = [
         (1, "Copper Chimney", "Horror", 5, 5, 5.0)
@@ -64,7 +69,7 @@ def test_agg_rating():
     ]
     df_2 = spark.createDataFrame(data_2, ['MovieID', 'Title', 'Genres', 'Rating'])
     df_2.createOrReplaceTempView('df_2')
-    res_df_2 = SampleApp.get_agg_rating(table_df='df_2')
+    res_df_2 = ob.get_agg_rating(table_df='df_2')
 
     data_exp_2 = [
         (1, "Copper Chimney", "Horror", 1, 5, 3.8333333333333335)
@@ -73,7 +78,8 @@ def test_agg_rating():
     assert res_df_2.collect() == expected_df_2.collect()
 
 def test_top3_movies():
-    '''Pytest to check if Top 3 movies of each user are calculated correctly.'''
+    """Pytest to check if Top 3 movies of each user are calculated correctly."""
+
     data = [
         (1, "Copper Chimney", "Horror"),
         (2, 'Titanic', "Romance"),
@@ -95,7 +101,7 @@ def test_top3_movies():
         (2, 6, 2, 12375),
     ]
     ratings_df = spark.createDataFrame(data2, ['UserID', 'MovieID', 'Rating', 'Timestamp'])
-    res_df = SampleApp.get_top3_movies(df, ratings_df)
+    res_df = ob.get_top3_movies(df, ratings_df)
 
     data_exp = [
         (1, "Copper Chimney;Joda;Treasure Hunt"),
