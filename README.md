@@ -7,7 +7,7 @@ The goal of this repository is to find:
 ## File Structure
 data: this folder contains the following .dat files: 
 *movies*, *ratings*, *users*. 
-It also has a README which has details about each file.
+It also has a info_datasets which has details about each file.
 
 src: this folder contains **etl_script.py**: the PySpark code for this analysis. 
 In order to run it, *pip, pyspark, findspark, pytest* has to be installed in the Python virtual environment. 
