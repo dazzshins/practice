@@ -38,8 +38,9 @@ def test_remove_duplicates_df():
     res_df = ob.remove_duplicates_df(df)
     assert res_df.collect() == expected_df.collect()
 
-def test_agg_rating():
-    """Pytest to check if aggregation on ratings are performed correctly."""
+def test_agg_rating_simple():
+    """Pytest to check if aggregation on ratings are performed correctly
+    when all data corresponds to 1 movie only and has 1 rating throughout."""
     
     data = [
         (1, 'Copper Chimney', 'Horror', 5),
@@ -59,7 +60,11 @@ def test_agg_rating():
     expected_df = spark.createDataFrame(data_exp, ['MovieID', 'Title', 'Genres', 'min', 'max', 'avg'])
     assert res_df.collect() == expected_df.collect()
 
-    data_2 = [
+def test_agg_rating_2():
+    """Pytest to check if aggregation on ratings are performed correctly
+    when all data corresponds to 1 movie only and has a range of ratings."""
+
+    data = [
         (1, 'Copper Chimney', 'Horror', 1),
         (1, 'Copper Chimney', 'Horror', 3),
         (1, 'Copper Chimney', 'Horror', 5),
@@ -67,18 +72,46 @@ def test_agg_rating():
         (1, 'Copper Chimney', 'Horror', 5),
         (1, 'Copper Chimney', 'Horror', 5),       
     ]
-    df_2 = spark.createDataFrame(data_2, ['MovieID', 'Title', 'Genres', 'Rating'])
-    df_2.createOrReplaceTempView('df_2')
-    res_df_2 = ob.get_agg_rating(table_df='df_2')
+    df = spark.createDataFrame(data, ['MovieID', 'Title', 'Genres', 'Rating'])
+    df.createOrReplaceTempView('df')
+    res_df = ob.get_agg_rating(table_df='df')
 
-    data_exp_2 = [
+    data_exp = [
         (1, "Copper Chimney", "Horror", 1, 5, 3.8333333333333335)
     ]
-    expected_df_2 = spark.createDataFrame(data_exp_2, ['MovieID', 'Title', 'Genres', 'min', 'max', 'avg'])
-    assert res_df_2.collect() == expected_df_2.collect()
+    expected_df = spark.createDataFrame(data_exp, ['MovieID', 'Title', 'Genres', 'min', 'max', 'avg'])
+    assert res_df.collect() == expected_df.collect()
+
+def test_agg_rating_3():
+    """Pytest to check if aggregation on ratings are performed correctly
+    when all data corresponds to different movies ."""
+
+    data = [
+        (1, 'Copper Chimney', 'Horror', 1),
+        (1, 'Copper Chimney', 'Horror', 3),
+        (2, 'Titanic', 'Romance', 5),
+        (3, 'Woof!', 'Action', 0),
+        (6, '', 'Horror', 5),
+        (7, 'Copper Chimney', 'Fiction', 2),       
+    ]
+    df = spark.createDataFrame(data, ['MovieID', 'Title', 'Genres', 'Rating'])
+    df.createOrReplaceTempView('df')
+    res_df = ob.get_agg_rating(table_df='df')
+
+    data_exp = [
+        (1, "Copper Chimney", "Horror", 1, 3, 2),
+        (2, "Titanic", "Romance", 5, 5, 5),
+        (3, 'Woof!', 'Action', 0, 0, 0),
+        (6, "", "Horror", 5, 5, 5),
+        (7, "Copper Chimney", "Fiction", 2, 2, 2),
+    ]
+    expected_df = spark.createDataFrame(data_exp, ['MovieID', 'Title', 'Genres', 'min', 'max', 'avg'])
+    assert res_df.collect() == expected_df.collect()
+
 
 def test_top3_movies():
-    """Pytest to check if Top 3 movies of each user are calculated correctly."""
+    """Pytest to check if Top 3 movies of each user are calculated correctly
+    and returned in the correct order."""
 
     data = [
         (1, "Copper Chimney", "Horror"),
@@ -104,7 +137,7 @@ def test_top3_movies():
     res_df = ob.get_top3_movies(df, ratings_df)
 
     data_exp = [
-        (1, "Copper Chimney;Joda;Treasure Hunt"),
+        (1, "Copper Chimney;Treasure Hunt;Joda"),
         (2, "Friends;Marley & me")
     ]
     expected_df = spark.createDataFrame(data_exp, ['UserID', 'top3 movies'])

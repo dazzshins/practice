@@ -17,6 +17,6 @@ print(current_dir)
 
 # read parquet files using inbuilt pyspark function
 op1 = spark.read.parquet('{0}/output/minmax_data.parquet'.format(current_dir))
-op1.show(5)
+op1.show(5, truncate=False)
 op2 = spark.read.parquet('{0}/output/top3movies.parquet'.format(current_dir))
-op2.show(5)
+op2.show(5, truncate=False)
