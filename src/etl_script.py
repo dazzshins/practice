@@ -70,7 +70,6 @@ class MAnalyseApp(LoggerProvider):
         """
         current_dir = os.getcwd()
         print(current_dir)
-        os.environ["SPARK_CONF_DIR"] = "{}/conf".format(current_dir)
         self.logger = self.get_logger(spark)
   
     def remove_duplicates_df(self, df):
@@ -132,10 +131,12 @@ class MAnalyseApp(LoggerProvider):
           how='inner'
         )
 
-        # selecting the main columns, group by UserId to collect Movie Titles in a list
+        # selecting the main columns, sort by rating in desc and title in asc orders, 
+        # group by UserId to collect Movie Titles in a list
         df = (
           movie_ord_rating_df
           .select('UserID', 'Title','Rating')
+          .sort(movie_ord_rating_df.Rating.desc(),'Title')
           .groupby('UserID')
           .agg(concat_ws( ';', 
                         collect_list('Title')
@@ -163,7 +164,7 @@ class MAnalyseApp(LoggerProvider):
           .load('{0}/data/movies.dat'.format(current_dir))
 
         movies_df.printSchema()
-        movies_df.show(5)
+        movies_df.show(5, truncate=False)
 
         # to create users dataframe from read and initialise its schema 
         custom_schema_users = StructType([
@@ -183,7 +184,7 @@ class MAnalyseApp(LoggerProvider):
           .load('{0}/data/users.dat'.format(current_dir))
 
         users_df.printSchema()
-        users_df.show(5)
+        users_df.show(5, truncate=False)
 
         # to create ratings dataframe from read and initialise its schema 
         custom_schema_ratings = StructType([
@@ -202,24 +203,24 @@ class MAnalyseApp(LoggerProvider):
           .load('{0}/data/ratings.dat'.format(current_dir))
 
         ratings_df.printSchema()
-        ratings_df.show(5)
+        ratings_df.show(5, truncate=False)
 
-        self.logger.info('INFO log_msg = {}'.format("Unedited count: "+str(movies_df.count())))
+        self.logger.info('log_msg = {}'.format("Unedited count: "+str(movies_df.count())))
 
         # remove rows that have MovieId as null
         movies_df.na.drop(subset=["MovieId"]).show(truncate=False)
-        self.logger.info('INFO log_msg = {}'.format("Post Removing Null rows count: "+str(movies_df.count())))
+        self.logger.info('log_msg = {}'.format("Post Removing Null rows count: "+str(movies_df.count())))
 
         # call function to remove duplicates in movies dataframe
         distinctMoviesDF = self.remove_duplicates_df(movies_df)
-        self.logger.info('INFO log_msg = {}'.format("Distinct count: "+str(distinctMoviesDF.count())))
+        self.logger.info('log_msg = {}'.format("Distinct count: "+str(distinctMoviesDF.count())))
 
         # to find the min, max and average rating of movies
         n_df = distinctMoviesDF.join(ratings_df, 
                               on="MovieId", 
                               how='inner')
         n_df.printSchema()
-        self.logger.info('INFO log_msg = {}'.format("Joined table count: "+str(n_df.count())))
+        self.logger.info('log_msg = {}'.format("Joined table count: "+str(n_df.count())))
         n_df.take(5)
 
         # select only columns that are needed
@@ -228,11 +229,11 @@ class MAnalyseApp(LoggerProvider):
 
         # call function to find aggregate values of Rating (min,max,avg)
         res1_df = self.get_agg_rating('new_df')
-        res1_df.show()
+        res1_df.show(truncate=False)
 
         # call function to find the top 3 movies of each userId
         agg_ratings_df = self.get_top3_movies(distinctMoviesDF, ratings_df)
-        agg_ratings_df.show() 
+        agg_ratings_df.show(truncate=False) 
 
         # write dataframes as parquet files. This is stored in output/
         agg_ratings_df.write.parquet('output/top3movies.parquet')
