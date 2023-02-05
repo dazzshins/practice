@@ -29,6 +29,7 @@ Python3 should be installed in your machine. Install Visual Code Studio as IDE.
 ```python3 -m venv <new_venv_name>```
 
 -To activate this venv, type:
+```cd <new_venv_name>```
 ```source ./bin/activate```
 
 -Go to *View menu* on Visual Code Studio, select *Command Palette* and search for *Python:Select Interpreter* and ensure you select the above **venv**.
